@@ -19,20 +19,20 @@ window.APP_CONFIG = {
       name: "Administrador",
     },
     diretor: {
-      password: "dxa2026",
+      password: "docg2026",
       role: "diretor",
       name: "Diretor",
     },
   },
 
   // ---- O que o papel "diretor" pode ver ----
-  // Opções possíveis: "overview", "dre", "mensal", "fluxo", "cenarios", "premissas"
-  // Remova da lista qualquer item que você não quer que o diretor veja.
-  directorVisibleViews: ["overview", "dre", "fluxo", "cenarios"],
+  // Opções possíveis: "overview", "dre", "premissas"
+  directorVisibleViews: ["overview", "dre"],
 
   // ---- O que o diretor pode fazer dentro das telas liberadas ----
   directorPermissions: {
-    canChangeScenario: true,   // pode clicar em Conservador/Realista/Agressivo
-    canEditAssumptions: false, // pode arrastar os sliders de premissas (Personalizado)
+    canChangeScenario: true,    // pode clicar em Conservador/Realista/Agressivo
+    canEditAssumptions: false,  // pode arrastar os sliders de premissas (Personalizado)
+    canChangeCompany: true,     // pode trocar o filtro de empresa (Consolidado/Coralina/etc)
   },
 };

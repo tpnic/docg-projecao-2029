@@ -12,9 +12,6 @@ const OVERRIDE_KEY = 'docg_access_override';
 const ALL_VIEWS = [
   { id: 'overview', label: 'Visão Geral' },
   { id: 'dre', label: 'DRE Projetada' },
-  { id: 'mensal', label: 'Projeção Mensal' },
-  { id: 'fluxo', label: 'Fluxo de Crescimento' },
-  { id: 'cenarios', label: 'Comparativo de Cenários' },
   { id: 'premissas', label: 'Premissas' },
 ];
 
@@ -106,15 +103,18 @@ function applyRoleRestrictions(user) {
     Array.from(document.querySelectorAll('.nav-item[data-view]')).find(b => visibleSet.includes(b.dataset.view));
   if (firstVisibleBtn) firstVisibleBtn.click();
 
-  // controls panel + scenario switch permissions (diretor only)
+  // controls panel + scenario switch + company filter permissions (diretor only)
   const controlsWrap = document.querySelector('.controls-wrap');
   const scenarioSwitch = document.getElementById('scenarioSwitch');
+  const companySelect = document.getElementById('companySelect');
   if (isAdmin) {
     controlsWrap.style.display = '';
     scenarioSwitch.style.display = '';
+    companySelect.disabled = false;
   } else {
     controlsWrap.style.display = cfg.directorPermissions.canEditAssumptions ? '' : 'none';
     scenarioSwitch.style.display = cfg.directorPermissions.canChangeScenario ? '' : 'none';
+    companySelect.disabled = !cfg.directorPermissions.canChangeCompany;
   }
 
   if (isAdmin) initAccessControlPanel();
@@ -131,12 +131,14 @@ function initAccessControlPanel() {
 
   document.getElementById('permScenario').checked = !!cfg.directorPermissions.canChangeScenario;
   document.getElementById('permAssumptions').checked = !!cfg.directorPermissions.canEditAssumptions;
+  document.getElementById('permCompany').checked = !!cfg.directorPermissions.canChangeCompany;
 
   function currentSelection() {
     const views = Array.from(grid.querySelectorAll('input[type="checkbox"]:checked')).map(i => i.dataset.viewId);
     const permissions = {
       canChangeScenario: document.getElementById('permScenario').checked,
       canEditAssumptions: document.getElementById('permAssumptions').checked,
+      canChangeCompany: document.getElementById('permCompany').checked,
     };
     return { views, permissions };
   }
@@ -149,6 +151,7 @@ function initAccessControlPanel() {
 directorPermissions: {
   canChangeScenario: ${sel.permissions.canChangeScenario},
   canEditAssumptions: ${sel.permissions.canEditAssumptions},
+  canChangeCompany: ${sel.permissions.canChangeCompany},
 },`;
     document.getElementById('configPreview').textContent = snippet;
   }
@@ -156,6 +159,7 @@ directorPermissions: {
   grid.querySelectorAll('input').forEach(cb => cb.addEventListener('change', updatePreview));
   document.getElementById('permScenario').addEventListener('change', updatePreview);
   document.getElementById('permAssumptions').addEventListener('change', updatePreview);
+  document.getElementById('permCompany').addEventListener('change', updatePreview);
   updatePreview();
 
   document.getElementById('copyConfigBtn').onclick = () => {

@@ -4,7 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Docg Group · Projeção Financeira 2027-2029 · FP&A</title>
-<meta name="description" content="Plataforma de planejamento financeiro (FP&A) — projeção 2027-2029 do Docg Group para o Fundo DXA.">
+<meta name="description" content="Plataforma de planejamento financeiro (FP&A) — projeção 2027-2029 do Docg Group.">
+<link rel="icon" type="image/png" href="assets/logo-teal.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
@@ -15,7 +16,7 @@
 <!-- ============ LOGIN SCREEN ============ -->
 <div class="login-screen" id="loginScreen">
   <div class="login-card">
-    <div class="login-mark">DG</div>
+    <img class="login-logo" src="assets/logo-teal.png" alt="Docg">
     <h1>Docg Group</h1>
     <div class="login-sub">FP&amp;A · Projeção Financeira 2027-2029</div>
     <form id="loginForm">
@@ -31,7 +32,7 @@
       <div class="login-error" id="loginError"></div>
       <button type="submit" class="login-btn">Entrar</button>
     </form>
-    <div class="login-foot">Acesso restrito · Docg Group &amp; Fundo DXA</div>
+    <div class="login-foot">Acesso restrito · Documento confidencial</div>
   </div>
 </div>
 
@@ -41,10 +42,9 @@
   <!-- ============ SIDEBAR ============ -->
   <aside class="sidebar" id="sidebar">
     <div class="brand">
-      <div class="brand-mark">DG</div>
+      <img class="brand-logo" src="assets/logo-teal.png" alt="Docg">
       <div class="brand-text">
-        <div class="brand-name">Docg Group</div>
-        <div class="brand-sub">FP&amp;A · Fundo DXA</div>
+        <div class="brand-sub">FP&amp;A · Projeção 2027-2029</div>
       </div>
     </div>
 
@@ -57,18 +57,6 @@
       <li><button class="nav-item" data-view="dre">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19V5a1 1 0 0 1 1-1h11l4 4v11a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1Z"/><path d="M9 9h6M9 13h6M9 17h3"/></svg>
         DRE Projetada
-      </button></li>
-      <li><button class="nav-item" data-view="mensal">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 3v3M16 3v3"/></svg>
-        Projeção Mensal
-      </button></li>
-      <li><button class="nav-item" data-view="fluxo">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 17 9 11l4 4 8-8"/><path d="M15 7h6v6"/></svg>
-        Fluxo de Crescimento
-      </button></li>
-      <li><button class="nav-item" data-view="cenarios">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="6" height="18" rx="1.5"/><rect x="9.5" y="8" width="6" height="13" rx="1.5"/><rect x="16" y="12" width="6" height="9" rx="1.5"/></svg>
-        Cenários
       </button></li>
     </ul>
 
@@ -86,7 +74,8 @@
 
     <div class="sidebar-foot">
       <strong>Base:</strong> Orçamento 2026 aprovado<br>
-      Docg + Franquias + Distribuidora + Coralina + Tech + S.A + Proline
+      Coralina · Franqueadora · Distribuidora · Tech · S.A
+      <div class="confidential-tag">🔒 Documento Confidencial</div>
     </div>
   </aside>
 
@@ -103,7 +92,10 @@
         </div>
       </div>
       <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
-        <span class="badge-live"><span class="dot"></span>Recalcula em tempo real</span>
+        <div class="company-select">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 9h1M9 13h1M9 17h1M14 9h1M14 13h1M14 17h1"/></svg>
+          <select id="companySelect"></select>
+        </div>
         <div class="scenario-switch" id="scenarioSwitch">
           <button class="scenario-btn" data-scn="Conservador">Conservador</button>
           <button class="scenario-btn active" data-scn="Realista">Realista</button>
@@ -131,7 +123,7 @@
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 21v-7M4 10V3M12 21v-11M12 6V3M20 21v-5M20 12V3M1 14h6M9 10h6M17 16h6"/></svg>
             <div>
               <h3>Painel de Premissas</h3>
-              <div class="sub">Ajuste os drivers e veja a DRE recalcular instantaneamente</div>
+              <div class="sub">Drivers agrupados por categoria da DRE — ajuste e veja tudo recalcular na hora</div>
             </div>
           </div>
           <div style="display:flex; align-items:center; gap:10px;">
@@ -141,7 +133,7 @@
             </div>
           </div>
         </div>
-        <div class="controls-grid" id="controlsGrid"><!-- injected by JS --></div>
+        <div class="controls-body" id="controlsBody"><!-- injected by JS: category groups --></div>
       </div>
     </div>
 
@@ -187,10 +179,10 @@
           </div>
           <div class="card">
             <div class="card-head">
-              <h3>Resultado Líquido — Trajetória</h3>
-              <div class="desc">Convergência ao equilíbrio</div>
+              <h3>EBITDA × Despesas Financeiras</h3>
+              <div class="desc">Cobertura do serviço da dívida pela geração de caixa operacional</div>
             </div>
-            <div class="chart-box h-260"><canvas id="chartResultadoLiquido"></canvas></div>
+            <div class="chart-box h-260"><canvas id="chartEbitdaDespFin"></canvas></div>
           </div>
         </div>
       </section>
@@ -199,13 +191,22 @@
       <section class="view" id="view-dre">
         <div class="section-heading">
           <h2>DRE Projetada</h2>
-          <div class="view-toggle" id="dreToggle">
-            <button class="active" data-mode="anual">Anual</button>
-            <button data-mode="mensal">Mensal (2027)</button>
+          <div class="section-filters">
+            <div class="period-select" id="periodSelect">
+              <button data-period="2026">2026</button>
+              <button data-period="2027">2027</button>
+              <button data-period="2028">2028</button>
+              <button data-period="2029">2029</button>
+              <button data-period="todos" class="active">Todos (Anual)</button>
+            </div>
           </div>
         </div>
 
         <div class="card">
+          <div class="card-head">
+            <h3 id="dreTableTitle">DRE Anual · 2026-2029</h3>
+            <div class="desc">Clique no (+) das linhas totalizadoras para ver a composição</div>
+          </div>
           <div class="table-wrap"><table class="dre" id="dreTable"><thead></thead><tbody></tbody></table></div>
         </div>
 
@@ -215,68 +216,9 @@
             <div class="chart-box h-300"><canvas id="chartReceitaCustos"></canvas></div>
           </div>
           <div class="card">
-            <div class="card-head"><h3>Composição das Despesas Operacionais</h3><div class="desc">2029E, % do total</div></div>
+            <div class="card-head"><h3>Composição das Despesas Operacionais</h3><div class="desc" id="composicaoDescYear">2029E, % do total</div></div>
             <div class="chart-box h-300"><canvas id="chartComposicaoDespesas"></canvas></div>
           </div>
-        </div>
-      </section>
-
-      <!-- ===================== VIEW: MENSAL ===================== -->
-      <section class="view" id="view-mensal">
-        <div class="section-heading">
-          <h2>Projeção Mensal — 36 meses</h2>
-          <div class="desc">Janeiro/2027 a Dezembro/2029, fasamento sazonal a partir da Base 2026</div>
-        </div>
-
-        <div class="card">
-          <div class="card-head"><h3>Receita Bruta Mensal</h3><div class="desc">R$ por mês</div></div>
-          <div class="chart-box h-260"><canvas id="chartReceitaMensal"></canvas></div>
-        </div>
-        <div class="grid-2-eq">
-          <div class="card">
-            <div class="card-head"><h3>EBITDA Mensal</h3></div>
-            <div class="chart-box h-260"><canvas id="chartEbitdaMensal"></canvas></div>
-          </div>
-          <div class="card">
-            <div class="card-head"><h3>Resultado Líquido Mensal</h3></div>
-            <div class="chart-box h-260"><canvas id="chartResultadoMensal"></canvas></div>
-          </div>
-        </div>
-      </section>
-
-      <!-- ===================== VIEW: FLUXO ===================== -->
-      <section class="view" id="view-fluxo">
-        <div class="section-heading">
-          <h2>Fluxo de Crescimento</h2>
-          <div class="desc">Ponte de Receita e EBITDA, métricas acumuladas e break-even</div>
-        </div>
-
-        <div class="kpi-grid" id="kpiFluxo"></div>
-
-        <div class="grid-2-eq">
-          <div class="card">
-            <div class="card-head"><h3>Waterfall — Receita Bruta</h3></div>
-            <div class="chart-box h-300"><canvas id="chartWaterfallReceita"></canvas></div>
-          </div>
-          <div class="card">
-            <div class="card-head"><h3>Waterfall — EBITDA</h3></div>
-            <div class="chart-box h-300"><canvas id="chartWaterfallEbitda"></canvas></div>
-          </div>
-        </div>
-      </section>
-
-      <!-- ===================== VIEW: CENARIOS ===================== -->
-      <section class="view" id="view-cenarios">
-        <div class="section-heading">
-          <h2>Comparativo de Cenários</h2>
-          <div class="desc">Receita, EBITDA e Resultado Líquido em 2029E sob cada premissa</div>
-        </div>
-
-        <div class="scn-compare-grid" id="scnCards"></div>
-
-        <div class="card">
-          <div class="card-head"><h3>Receita Bruta e EBITDA 2029E por Cenário</h3></div>
-          <div class="chart-box h-300"><canvas id="chartScenarios"></canvas></div>
         </div>
       </section>
 
@@ -284,22 +226,15 @@
       <section class="view" id="view-premissas">
         <div class="section-heading">
           <h2>Premissas da Projeção</h2>
-          <div class="desc">Racional metodológico de cada driver do modelo</div>
+          <div class="desc">Racional metodológico de cada driver, agrupado por categoria da DRE</div>
         </div>
-        <div class="card">
-          <div class="prem-table-wrap">
-            <table class="prem" id="premTable">
-              <thead><tr><th>Premissa</th><th>Valor Ativo</th><th>Racional</th></tr></thead>
-              <tbody></tbody>
-            </table>
-          </div>
-        </div>
+        <div id="premCategoriesWrap" style="display:flex; flex-direction:column; gap:14px;"><!-- injected --></div>
         <div class="card footnote">
           <b>Regime tributário:</b> IRPJ/CSLL apurados no regime de Lucro Presumido — incidência sobre percentual da Receita Bruta,
-          independentemente do resultado contábil apurado no exercício. Fator aplicado: 11,66% sobre a alíquota de Impostos sobre Vendas.<br><br>
+          independentemente do resultado contábil apurado no exercício.<br><br>
           <b>Nota metodológica — Marketing/Comercial:</b> a conta original do orçamento "Despesas de Vendas e Marketing" foi decomposta em
           Marketing (55%) e Comercial (45%) para permitir controle independente de premissas, preservando o total histórico.<br><br>
-          <b>Fonte:</b> Orçamento 2026 aprovado — consolidado Docg + Franquias + Distribuidora + Coralina + Tech + S.A + Proline.
+          <b>Base:</b> Orçamento 2026 aprovado — Coralina Alimentos, Franqueadora, Distribuidora, Docg Tech e Docg S.A. (holding).
         </div>
       </section>
 
@@ -329,6 +264,10 @@
               <input type="checkbox" id="permAssumptions">
               <span>Diretor pode arrastar os sliders de premissas (modo Personalizado)</span>
             </label>
+            <label class="access-toggle">
+              <input type="checkbox" id="permCompany">
+              <span>Diretor pode trocar o filtro de empresa</span>
+            </label>
           </div>
         </div>
 
@@ -346,7 +285,7 @@
     </main>
 
     <footer class="page-footer">
-      Docg Group · Projeção Financeira 2027–2029 · Material preparado para o Fundo DXA (Private Equity) · Todos os valores em R$, não auditados
+      Docg Group · Projeção Financeira 2027–2029 · <span class="confidential-inline">Documento Confidencial</span> · Todos os valores em R$, não auditados
     </footer>
   </div>
 </div>
