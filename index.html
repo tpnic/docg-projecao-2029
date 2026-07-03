@@ -9,7 +9,26 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
+<script>
+  // Carrega Chart.js com CDNs alternativos (alguns bloqueadores de anuncio/redes corporativas
+  // bloqueiam cdnjs). Se todos falharem, o dashboard continua funcionando sem os graficos.
+  window.chartJsReady = new Promise((resolve) => {
+    const sources = [
+      'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js',
+      'https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js',
+      'https://unpkg.com/chart.js@4.4.4/dist/chart.umd.min.js',
+    ];
+    function tryLoad(i) {
+      if (i >= sources.length) { resolve(false); return; }
+      const s = document.createElement('script');
+      s.src = sources[i];
+      s.onload = () => resolve(true);
+      s.onerror = () => tryLoad(i + 1);
+      document.head.appendChild(s);
+    }
+    tryLoad(0);
+  });
+</script>
 </head>
 <body>
 
@@ -67,8 +86,8 @@
         Premissas
       </button></li>
       <li id="navAccessItem" style="display:none;"><button class="nav-item" data-view="access">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-        Controle de Acesso
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        Usuários
       </button></li>
     </ul>
 
@@ -112,36 +131,50 @@
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg>
           </button>
         </div>
+        <button class="drawer-toggle-btn" id="drawerToggleBtn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 21v-7M4 10V3M12 21v-11M12 6V3M20 21v-5M20 12V3M1 14h6M9 10h6M17 16h6"/></svg>
+          Premissas
+        </button>
       </div>
     </header>
 
-    <!-- ============ ASSUMPTIONS CONTROL STRIP ============ -->
-    <div class="controls-wrap">
-      <div class="controls-panel" id="controlsPanel">
-        <div class="controls-header" id="controlsHeader">
-          <div class="controls-header-left">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 21v-7M4 10V3M12 21v-11M12 6V3M20 21v-5M20 12V3M1 14h6M9 10h6M17 16h6"/></svg>
-            <div>
-              <h3>Painel de Premissas</h3>
-              <div class="sub">Drivers agrupados por categoria da DRE — ajuste e veja tudo recalcular na hora</div>
-            </div>
-          </div>
-          <div style="display:flex; align-items:center; gap:10px;">
-            <button class="controls-reset" id="resetBtn">Restaurar cenário Realista</button>
-            <div class="controls-toggle" id="controlsToggle">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 9l6 6 6-6"/></svg>
-            </div>
+    <!-- ============ ASSUMPTIONS DRAWER (slide-out) ============ -->
+    <div class="drawer-overlay" id="drawerOverlay"></div>
+    <aside class="drawer" id="controlsPanel">
+      <div class="controls-header" id="controlsHeader">
+        <div class="controls-header-left">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 21v-7M4 10V3M12 21v-11M12 6V3M20 21v-5M20 12V3M1 14h6M9 10h6M17 16h6"/></svg>
+          <div>
+            <h3>Painel de Premissas</h3>
+            <div class="sub">Drivers por categoria — recalcula em tempo real</div>
           </div>
         </div>
-        <div class="controls-body" id="controlsBody"><!-- injected by JS: category groups --></div>
+        <button class="drawer-close-btn" id="drawerCloseBtn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
       </div>
-    </div>
+      <div class="controls-body" id="controlsBody"><!-- injected by JS: category groups --></div>
+      <div class="drawer-footer">
+        <button class="controls-reset" id="resetBtn" style="width:100%;">Restaurar cenário Realista</button>
+      </div>
+    </aside>
 
     <!-- ============ CONTENT ============ -->
     <main class="content">
 
       <!-- ===================== VIEW: OVERVIEW ===================== -->
       <section class="view active" id="view-overview">
+        <div class="section-heading" style="justify-content:flex-end;">
+          <div class="section-filters">
+            <div class="period-select" id="periodSelectOverview">
+              <button data-period="2026">2026</button>
+              <button data-period="2027">2027</button>
+              <button data-period="2028">2028</button>
+              <button data-period="2029">2029</button>
+              <button data-period="todos" class="active">Todos (Anual)</button>
+            </div>
+          </div>
+        </div>
         <div class="kpi-grid" id="kpiOverview"><!-- injected --></div>
 
         <div class="waterfall-hero card">
@@ -238,43 +271,67 @@
         </div>
       </section>
 
-      <!-- ===================== VIEW: ACCESS CONTROL (ADMIN ONLY) ===================== -->
+      <!-- ===================== VIEW: USER MANAGEMENT (ADMIN ONLY) ===================== -->
       <section class="view" id="view-access">
         <div class="section-heading">
-          <h2>Controle de Acesso do Diretor</h2>
-          <div class="desc">Escolha o que a conta "diretor" pode ver e fazer</div>
+          <h2>Usuários</h2>
+          <div class="desc">Crie contas e defina exatamente o que cada uma pode ver e fazer</div>
+        </div>
+
+        <div class="card">
+          <div class="card-head"><h3>Usuários cadastrados</h3></div>
+          <div id="usersListWrap"><!-- injected --></div>
         </div>
 
         <div class="card">
           <div class="card-head">
-            <h3>Telas visíveis para o diretor</h3>
-            <div class="desc">Desmarque o que não deve aparecer para essa conta</div>
+            <h3>Criar novo usuário</h3>
+            <div class="desc">Escolha as telas (incluindo Premissas, se quiser) e as permissões dessa conta</div>
           </div>
-          <div class="access-grid" id="accessViewsGrid"><!-- injected --></div>
-        </div>
+          <div class="new-user-form">
+            <div class="new-user-fields">
+              <div class="control-item">
+                <label>Nome de exibição</label>
+                <input type="text" id="newUserName" class="text-input" placeholder="Ex.: Diretor Financeiro">
+              </div>
+              <div class="control-item">
+                <label>Usuário (login)</label>
+                <input type="text" id="newUserUsername" class="text-input" placeholder="Ex.: financeiro">
+              </div>
+              <div class="control-item">
+                <label>Senha</label>
+                <input type="text" id="newUserPassword" class="text-input" placeholder="Defina uma senha">
+              </div>
+            </div>
 
-        <div class="card">
-          <div class="card-head"><h3>Permissões dentro das telas liberadas</h3></div>
-          <div class="access-perm-row">
-            <label class="access-toggle">
-              <input type="checkbox" id="permScenario">
-              <span>Diretor pode clicar nos botões de cenário (Conservador/Realista/Agressivo)</span>
-            </label>
-            <label class="access-toggle">
-              <input type="checkbox" id="permAssumptions">
-              <span>Diretor pode arrastar os sliders de premissas (modo Personalizado)</span>
-            </label>
-            <label class="access-toggle">
-              <input type="checkbox" id="permCompany">
-              <span>Diretor pode trocar o filtro de empresa</span>
-            </label>
+            <div class="controls-cat-label" style="margin-top:14px;">Telas visíveis</div>
+            <div class="access-grid" id="newUserViewsGrid"><!-- injected --></div>
+
+            <div class="controls-cat-label" style="margin-top:14px;">Permissões</div>
+            <div class="access-perm-row">
+              <label class="access-toggle">
+                <input type="checkbox" id="newUserPermScenario">
+                <span>Pode clicar nos botões de cenário (Conservador/Realista/Agressivo)</span>
+              </label>
+              <label class="access-toggle">
+                <input type="checkbox" id="newUserPermAssumptions">
+                <span>Pode abrir o painel de Premissas e arrastar os sliders (modo Personalizado)</span>
+              </label>
+              <label class="access-toggle">
+                <input type="checkbox" id="newUserPermCompany">
+                <span>Pode trocar o filtro de empresa</span>
+              </label>
+            </div>
+
+            <div class="new-user-error" id="newUserError"></div>
+            <button class="login-btn" id="addUserBtn" style="margin-top:14px; width:auto; padding:10px 22px;">+ Criar usuário</button>
           </div>
         </div>
 
         <div class="card">
           <div class="card-head">
             <h3>Aplicar e publicar</h3>
-            <div class="desc">A pré-visualização abaixo já testa a mudança neste navegador. Para valer para todo mundo (inclusive em outro computador), copie o trecho e cole no arquivo <code>config.js</code>, depois publique novamente no GitHub Pages.</div>
+            <div class="desc">Os usuários criados aqui já funcionam neste navegador. Para valer para todo mundo (qualquer computador), copie o trecho abaixo e cole em <code>config.js</code> (substituindo o array <code>users</code>), depois publique novamente no GitHub Pages.</div>
           </div>
           <pre class="config-preview" id="configPreview"></pre>
           <button class="controls-reset" id="copyConfigBtn" style="margin-top:10px;">Copiar configuração</button>

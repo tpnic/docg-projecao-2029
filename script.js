@@ -1,27 +1,11 @@
 /* ==========================================================================
-   DOCG GROUP — FP&A PLATFORM — CALCULATION ENGINE + RENDERING (v2)
-   Suporta múltiplas empresas (Consolidado + 5 entidades), drivers agrupados
-   por categoria da DRE, tabela colapsável com detalhamento, filtro de
-   período e tooltips explicativos nos KPIs.
+   DOCG GROUP — FP&A PLATFORM — CALCULATION ENGINE + RENDERING (v3)
    ========================================================================== */
 
 const CHART_COLORS = {
-  teal: '#1ca4b4',
-  tealDark: '#0f7c89',
-  tealLight: '#8ad3db',
-  pos: '#1e8a5f',
-  neg: '#c0392b',
-  grid: '#e1ebec',
-  ink: '#63797e',
-  slate: '#8a9ca0',
+  teal: '#1ca4b4', tealDark: '#0f7c89', tealLight: '#8ad3db',
+  pos: '#1e8a5f', neg: '#c0392b', grid: '#e1ebec', ink: '#63797e', slate: '#8a9ca0',
 };
-if (typeof Chart !== 'undefined') {
-  Chart.defaults.font.family = "'Inter', sans-serif";
-  Chart.defaults.font.size = 11.5;
-  Chart.defaults.color = CHART_COLORS.ink;
-  Chart.defaults.plugins.legend.labels.boxWidth = 12;
-  Chart.defaults.plugins.legend.labels.usePointStyle = true;
-}
 
 let DATA = null;
 let STATE = {
@@ -29,8 +13,8 @@ let STATE = {
   assumptions: null,
   custom: null,
   company: 'Consolidado',
-  period: 'todos',       // '2026' | '2027' | '2028' | '2029' | 'todos'
-  dreExpanded: {},        // groupId -> bool
+  period: 'todos',
+  dreExpanded: {},   // rowId -> bool (default true, set lazily)
 };
 const charts = {};
 const MONTH_LABELS_PT = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
@@ -133,19 +117,14 @@ function buildCompanySelect() {
   const entries = Object.entries(DATA.companies).sort((a,b) => a[1].order - b[1].order);
   sel.innerHTML = entries.map(([key, meta]) => `<option value="${key}">${meta.label}</option>`).join('');
   sel.value = STATE.company;
-  sel.addEventListener('change', () => {
-    STATE.company = sel.value;
-    renderAll();
-  });
+  sel.addEventListener('change', () => { STATE.company = sel.value; renderAll(); });
 }
 
-/* ------------------------------ controls UI (category grouped) ------------------------------ */
+/* ------------------------------ drivers drawer ------------------------------ */
 function buildControls() {
   const body = document.getElementById('controlsBody');
   const cats = {};
-  Object.entries(DATA.assumptionMeta).forEach(([key, meta]) => {
-    (cats[meta.cat] = cats[meta.cat] || []).push(key);
-  });
+  Object.entries(DATA.assumptionMeta).forEach(([key, meta]) => { (cats[meta.cat] = cats[meta.cat] || []).push(key); });
   const catOrder = Object.keys(DATA.categoryMeta);
   body.innerHTML = catOrder.filter(c => cats[c]).map(catKey => {
     const catMeta = DATA.categoryMeta[catKey];
@@ -165,21 +144,16 @@ function buildControls() {
   }).join('');
 
   Object.keys(DATA.assumptionMeta).forEach((key) => {
-    const slider = document.getElementById(`slider-${key}`);
-    slider.addEventListener('input', (e) => {
+    document.getElementById(`slider-${key}`).addEventListener('input', (e) => {
       const v = parseFloat(e.target.value);
       STATE.assumptions[key] = v;
       STATE.custom[key] = v;
       document.getElementById(`cv-${key}`).textContent = fmtPct(v, 2);
-      if (STATE.scenario !== 'Personalizado') {
-        STATE.scenario = 'Personalizado';
-        setScenarioButtonActive('Personalizado');
-      }
+      if (STATE.scenario !== 'Personalizado') { STATE.scenario = 'Personalizado'; setScenarioButtonActive('Personalizado'); }
       renderAll();
     });
   });
 }
-
 function syncSliders() {
   Object.keys(DATA.assumptionMeta).forEach((key) => {
     const slider = document.getElementById(`slider-${key}`);
@@ -188,27 +162,31 @@ function syncSliders() {
     if (cv) cv.textContent = fmtPct(STATE.assumptions[key], 2);
   });
 }
-
 function setScenarioButtonActive(name) {
   document.querySelectorAll('.scenario-btn').forEach(b => b.classList.toggle('active', b.dataset.scn === name));
 }
-
 function applyScenario(name) {
   STATE.scenario = name;
-  if (name === 'Personalizado') {
-    STATE.assumptions = { ...STATE.custom };
-  } else {
-    STATE.assumptions = { ...DATA.scenarios[name] };
-    STATE.custom = { ...DATA.scenarios[name] };
-  }
+  if (name === 'Personalizado') { STATE.assumptions = { ...STATE.custom }; }
+  else { STATE.assumptions = { ...DATA.scenarios[name] }; STATE.custom = { ...DATA.scenarios[name] }; }
   setScenarioButtonActive(name);
   syncSliders();
   renderAll();
 }
+function initDrawer() {
+  const drawer = document.getElementById('controlsPanel');
+  const overlay = document.getElementById('drawerOverlay');
+  const open = () => { drawer.classList.add('open'); overlay.classList.add('show'); };
+  const close = () => { drawer.classList.remove('open'); overlay.classList.remove('show'); };
+  document.getElementById('drawerToggleBtn').addEventListener('click', open);
+  document.getElementById('drawerCloseBtn').addEventListener('click', close);
+  overlay.addEventListener('click', close);
+  document.getElementById('resetBtn').addEventListener('click', () => applyScenario('Realista'));
+}
 
 /* ------------------------------ nav / views ------------------------------ */
 function initNav() {
-  const titles = { overview: 'Visão Geral', dre: 'DRE Projetada', premissas: 'Premissas', access: 'Controle de Acesso' };
+  const titles = { overview: 'Visão Geral', dre: 'DRE Projetada', premissas: 'Premissas', access: 'Usuários' };
   document.querySelectorAll('.nav-item').forEach(btn => {
     btn.addEventListener('click', () => {
       document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
@@ -222,27 +200,12 @@ function initNav() {
     });
   });
 }
-
-function initControlsCollapse() {
-  const header = document.getElementById('controlsHeader');
-  const panel = document.getElementById('controlsPanel');
-  header.addEventListener('click', (e) => {
-    if (e.target.closest('#resetBtn')) return;
-    panel.classList.toggle('collapsed');
-  });
-  document.getElementById('resetBtn').addEventListener('click', (e) => {
-    e.stopPropagation();
-    applyScenario('Realista');
-  });
-}
-
 function initMobileNav() {
   const sidebar = document.getElementById('sidebar');
   const overlay = document.getElementById('overlay');
   document.getElementById('mobileNavToggle').addEventListener('click', () => { sidebar.classList.add('open'); overlay.classList.add('show'); });
   overlay.addEventListener('click', () => { sidebar.classList.remove('open'); overlay.classList.remove('show'); });
 }
-
 function initScenarioSwitch() {
   document.getElementById('scenarioSwitch').addEventListener('click', (e) => {
     const btn = e.target.closest('.scenario-btn');
@@ -250,24 +213,33 @@ function initScenarioSwitch() {
     applyScenario(btn.dataset.scn);
   });
 }
-
-function initPeriodSelect() {
-  document.getElementById('periodSelect').addEventListener('click', (e) => {
-    const btn = e.target.closest('button');
-    if (!btn) return;
-    document.querySelectorAll('#periodSelect button').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    STATE.period = btn.dataset.period;
-    renderDre();
+function initPeriodSelects() {
+  ['periodSelect', 'periodSelectOverview'].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.addEventListener('click', (e) => {
+      const btn = e.target.closest('button');
+      if (!btn) return;
+      document.querySelectorAll(`#${id} button`).forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      // keep both selectors in sync
+      document.querySelectorAll('.period-select').forEach(sel => {
+        sel.querySelectorAll('button').forEach(b => b.classList.toggle('active', b.dataset.period === btn.dataset.period));
+      });
+      STATE.period = btn.dataset.period;
+      renderDre();
+      renderOverview(LAST.annual);
+    });
   });
 }
 
 /* ------------------------------ chart helper ------------------------------ */
 function upsertChart(id, config) {
+  const el = document.getElementById(id);
+  if (!el) return;
   if (typeof Chart === 'undefined') return;
   if (charts[id]) charts[id].destroy();
-  const ctx = document.getElementById(id).getContext('2d');
-  charts[id] = new Chart(ctx, config);
+  charts[id] = new Chart(el.getContext('2d'), config);
 }
 const gridOpt = { color: CHART_COLORS.grid, drawTicks: false };
 const baseScales = {
@@ -277,11 +249,11 @@ const baseScales = {
 
 /* ------------------------------ KPI rendering ------------------------------ */
 const KPI_TOOLTIPS = {
-  receita: 'Receita Bruta projetada para 2029, antes de impostos sobre vendas. CAGR = crescimento anual composto entre 2026 e 2029.',
+  receita: 'Receita Bruta projetada, antes de impostos sobre vendas. CAGR = crescimento anual composto entre 2026 e 2029.',
   ebitda: 'Lucro antes de juros, impostos, depreciação e amortização — mede a geração de caixa operacional, sem o efeito da estrutura de capital.',
   resultado: 'Resultado Líquido contábil final, após todas as despesas, resultado financeiro e impostos (IRPJ/CSLL).',
   margemBruta: 'Lucro Bruto dividido pela Receita Líquida — mostra quanto sobra após o custo direto do produto/serviço vendido (CMV).',
-  cagrEbitda: 'Taxa de crescimento anual composta do EBITDA entre 2026 e 2029. O múltiplo mostra quantas vezes o EBITDA de 2026 o de 2029 representa.',
+  cagrEbitda: 'Taxa de crescimento anual composta do EBITDA. O múltiplo mostra quantas vezes o EBITDA do período inicial o do período final representa.',
   despFinReceita: 'Despesas Financeiras (juros e encargos de dívida) como percentual da Receita Bruta — mede o peso do endividamento sobre a operação.',
 };
 function kpiCard({ label, value, sub, subChip, tone, tooltip }) {
@@ -296,6 +268,14 @@ function kpiCard({ label, value, sub, subChip, tone, tooltip }) {
 }
 
 function renderOverview(annual) {
+  if (STATE.period === 'todos') {
+    renderOverviewAnnualMode(annual);
+  } else {
+    renderOverviewMonthlyMode(parseInt(STATE.period, 10), annual);
+  }
+}
+
+function renderOverviewAnnualMode(annual) {
   const c26 = annual[2026], c29 = annual[2029];
   const cagrReceita = Math.pow(c29.receitaBruta / (c26.receitaBruta || 1), 1/3) - 1;
   const cagrEbitda = Math.pow(c29.ebitda / (c26.ebitda || 1), 1/3) - 1;
@@ -367,37 +347,109 @@ function renderOverview(annual) {
   });
 }
 
-/* ------------------------------ DRE table (collapsible) ------------------------------ */
-// Each group: subtotal row + optional detail rows shown below it when expanded.
+function renderOverviewMonthlyMode(year, annual) {
+  const rows = year === 2026 ? monthlyRowsFromBase() : LAST.monthly.filter(r => r.year === year);
+  const cur = annual[year];
+  const prevAnnual = annual[year - 1] || annual[2026];
+  const kpis = [
+    kpiCard({ label: `Receita Bruta ${year}`, value: fmtBRL(cur.receitaBruta, {notation:'compact'}), sub: `vs ano anterior: `, subChip:{text: fmtPct(cur.receitaBruta/(prevAnnual.receitaBruta||1)-1), tone:'pos'}, tooltip: KPI_TOOLTIPS.receita }),
+    kpiCard({ label: `EBITDA ${year}`, value: fmtBRL(cur.ebitda, {notation:'compact'}), sub: `Margem: `, subChip:{text: fmtPct(cur.receitaLiquida ? cur.ebitda/cur.receitaLiquida : 0), tone:'pos'}, tooltip: KPI_TOOLTIPS.ebitda }),
+    kpiCard({ label: `Resultado Líquido ${year}`, value: fmtBRL(cur.resultado, {notation:'compact'}), tone: cur.resultado<0?'neg':'pos', sub: `Margem Líquida: ${fmtPct(cur.receitaLiquida ? cur.resultado/cur.receitaLiquida : 0)}`, tooltip: KPI_TOOLTIPS.resultado }),
+    kpiCard({ label: 'Margem Bruta', value: fmtPct(cur.receitaLiquida ? cur.lucroBruto/cur.receitaLiquida : 0), sub: `Lucro Bruto: ${fmtBRL(cur.lucroBruto,{notation:'compact'})}`, tooltip: KPI_TOOLTIPS.margemBruta }),
+    kpiCard({ label: 'Melhor mês (Receita)', value: MONTH_LABELS_PT[rows.reduce((bi,r,i,arr)=> r.receitaBruta>arr[bi].receitaBruta?i:bi,0)], sub: 'Pico sazonal do ano' }),
+    kpiCard({ label: 'Despesas Financeiras / Receita', value: fmtPct(cur.receitaBruta ? -cur.despFin/cur.receitaBruta : 0), tooltip: KPI_TOOLTIPS.despFinReceita }),
+  ];
+  document.getElementById('kpiOverview').innerHTML = kpis.join('');
+
+  const labels = rows.map((r,i) => MONTH_LABELS_PT[i]);
+  upsertChart('chartWaterfallHero', {
+    type: 'bar',
+    data: { labels, datasets: [{ label: 'Receita Bruta', data: rows.map(r=>r.receitaBruta), backgroundColor: CHART_COLORS.tealLight, borderRadius:4, maxBarThickness:34 }] },
+    options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}},
+      scales: { x: { grid:{display:false}, ticks:{color:'#d5f1f4'} }, y: { grid:{color:'rgba(255,255,255,0.18)'}, ticks:{color:'#d5f1f4', callback:(v)=>fmtBRLCompact(v)}, border:{display:false} } } },
+  });
+  upsertChart('chartReceitaEbitdaAnual', {
+    type: 'bar',
+    data: { labels, datasets: [
+      { label: 'Receita Bruta', data: rows.map(r=>r.receitaBruta), backgroundColor: CHART_COLORS.tealDark, borderRadius:4, maxBarThickness:22 },
+      { label: 'EBITDA', data: rows.map(r=>r.ebitda), backgroundColor: CHART_COLORS.teal, borderRadius:4, maxBarThickness:22 },
+    ]},
+    options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'top', align:'end'}}, scales: baseScales },
+  });
+  upsertChart('chartCrescimentoReceita', {
+    type: 'line',
+    data: { labels, datasets: [{ label:'Receita Mensal', data: rows.map(r=>r.receitaBruta), borderColor: CHART_COLORS.teal, backgroundColor:'rgba(28,164,180,0.15)', fill:true, tension:0.35, pointRadius:3 }] },
+    options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales: baseScales },
+  });
+  upsertChart('chartMargens', {
+    type: 'line',
+    data: { labels, datasets: [
+      { label: 'Margem EBITDA', data: rows.map(r=>r.receitaLiquida ? r.ebitda/r.receitaLiquida : 0), borderColor: CHART_COLORS.teal, tension:0.35, pointRadius:3 },
+      { label: 'Margem Líquida', data: rows.map(r=>r.receitaLiquida ? r.resultado/r.receitaLiquida : 0), borderColor: CHART_COLORS.neg, tension:0.35, pointRadius:3 },
+    ]},
+    options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'top', align:'end'}},
+      scales: { x: baseScales.x, y: { grid: gridOpt, ticks: { callback:(v)=>fmtPct(v,0) }, border:{display:false} } } },
+  });
+  upsertChart('chartEbitdaDespFin', {
+    type: 'bar',
+    data: { labels, datasets: [
+      { label: 'EBITDA', data: rows.map(r=>r.ebitda), backgroundColor: CHART_COLORS.teal, borderRadius:4, maxBarThickness:22 },
+      { label: 'Despesas Financeiras', data: rows.map(r=>-r.despFin), backgroundColor: CHART_COLORS.neg, borderRadius:4, maxBarThickness:22 },
+    ]},
+    options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'top', align:'end'}}, scales: baseScales },
+  });
+}
+
+function monthlyRowsFromBase() {
+  const base = DATA.base2026.monthly[STATE.company];
+  const keys = Object.keys(base);
+  return Array.from({length:12}, (_,i) => {
+    const row = {};
+    keys.forEach(k => { row[k] = base[k][i]; });
+    return row;
+  });
+}
+
+/* ------------------------------ DRE table (nested collapsible) ------------------------------ */
 const DRE_GROUPS = [
-  { id: 'receita', subtotal: {k:'receitaBruta', label:'RECEITA BRUTA'}, details: [] },
-  { id: 'liquida', subtotal: {k:'receitaLiquida', label:'(=) RECEITA LÍQUIDA'}, details: [
-      {k:'deducoes', label:'(-) Deduções da Receita Bruta (impostos sobre vendas)'},
+  { id:'receita', k:'receitaBruta', label:'RECEITA BRUTA', type:'sub', ratioKey:'receitaBruta', details: [] },
+  { id:'liquida', k:'receitaLiquida', label:'(=) RECEITA LÍQUIDA', type:'sub', details: [
+      {id:'deducoes', k:'deducoes', label:'(-) Deduções da Receita Bruta (impostos sobre vendas)', ratioKey:'deducoes'},
   ]},
-  { id: 'bruto', subtotal: {k:'lucroBruto', label:'(=) LUCRO BRUTO'}, details: [
-      {k:'cmv', label:'(-) Custo dos Produtos/Serviços (CMV)'},
+  { id:'bruto', k:'lucroBruto', label:'(=) LUCRO BRUTO', type:'sub', details: [
+      {id:'cmv', k:'cmv', label:'(-) Custo dos Produtos/Serviços (CMV)', ratioKey:'cmv'},
   ], margin: {label:'Margem Bruta %', num:'lucroBruto', den:'receitaLiquida'} },
-  { id: 'ebitda', subtotal: {k:'ebitda', label:'(=) EBITDA'}, details: [
-      {k:'marketing', label:'(-) Marketing'},
-      {k:'comercial', label:'(-) Comercial'},
-      {k:'folha', label:'(-) Despesas com Pessoal (Folha)'},
-      {k:'administrativas', label:'(-) Despesas Administrativas'},
-      {k:'bancarias', label:'(-) Despesas Financ./Bancárias'},
-      {k:'outras', label:'(-) Outras Despesas'},
+  { id:'ebitda', k:'ebitda', label:'(=) EBITDA', type:'sub', details: [
+      {id:'marketing', k:'marketing', label:'(-) Marketing'},
+      {id:'comercial', k:'comercial', label:'(-) Comercial'},
+      {id:'folha', k:'folha', label:'(-) Despesas com Pessoal (Folha)'},
+      {id:'administrativas', k:'administrativas', label:'(-) Despesas Administrativas', ratioKey:'administrativas'},
+      {id:'bancarias', k:'bancarias', label:'(-) Despesas Financ./Bancárias'},
+      {id:'outras', k:'outras', label:'(-) Outras Despesas'},
   ], margin: {label:'Margem EBITDA %', num:'ebitda', den:'receitaLiquida'} },
-  { id: 'ebit', subtotal: {k:'ebit', label:'(=) EBIT (LAJIR)'}, details: [
-      {k:'da', label:'(-) Depreciação e Amortização'},
+  { id:'ebit', k:'ebit', label:'(=) EBIT (LAJIR)', type:'sub', details: [
+      {id:'da', k:'da', label:'(-) Depreciação e Amortização'},
   ]},
-  { id: 'lair', subtotal: {k:'lair', label:'(=) LAIR'}, details: [
-      {k:'recFin', label:'(+) Receitas Financeiras'},
-      {k:'despFin', label:'(-) Despesas Financeiras (Dívida)'},
+  { id:'lair', k:'lair', label:'(=) LAIR', type:'sub', details: [
+      {id:'recFin', k:'recFin', label:'(+) Receitas Financeiras'},
+      {id:'despFin', k:'despFin', label:'(-) Despesas Financeiras (Dívida)'},
   ], margin: {label:'Margem LAIR %', num:'lair', den:'receitaLiquida'} },
-  { id: 'liquido', subtotal: {k:'resultado', label:'(=) RESULTADO LÍQUIDO'}, details: [
-      {k:'irpj', label:'(-) IRPJ + CSLL'},
+  { id:'liquido', k:'resultado', label:'(=) RESULTADO LÍQUIDO', type:'sub', details: [
+      {id:'irpj', k:'irpj', label:'(-) IRPJ + CSLL'},
   ], margin: {label:'Margem Líquida %', num:'resultado', den:'receitaLiquida'} },
 ];
 
 let LAST = null;
+
+function isExpanded(id) {
+  return STATE.dreExpanded[id] !== false; // default true (everything open)
+}
+
+function ratioChildrenFor(ratioKey) {
+  if (!ratioKey) return null;
+  const list = (DATA.detailBreakdown[STATE.company] || {})[ratioKey];
+  return (list && list.length) ? list : null;
+}
 
 function renderDre() {
   const thead = document.querySelector('#dreTable thead');
@@ -407,48 +459,51 @@ function renderDre() {
 
   if (STATE.period === 'todos') {
     cols = [2026,2027,2028,2029];
-    thead.innerHTML = `<tr><th>Conta</th>${cols.map(c=>`<th>${c}${c===2026?' (Base)':'E'}</th>`).join('')}</tr>`;
+    thead.innerHTML = `<tr><th>Conta</th>${cols.map(c=>`<th>${c}${c===2026?' (Base)':''}</th>`).join('')}</tr>`;
     getVal = (key, c) => LAST.annual[c][key];
     title.textContent = `DRE Anual · 2026-2029 · ${DATA.companies[STATE.company].label}`;
   } else {
     const year = parseInt(STATE.period, 10);
+    cols = Array.from({length:12}, (_,i)=>i);
     if (year === 2026) {
-      cols = Array.from({length:12}, (_,i)=>i);
       const base = DATA.base2026.monthly[STATE.company];
       getVal = (key, i) => base[key] ? base[key][i] : 0;
-      thead.innerHTML = `<tr><th>Conta</th>${cols.map(i=>`<th>${MONTH_LABELS_PT[i]}/26</th>`).join('')}</tr>`;
     } else {
-      cols = Array.from({length:12}, (_,i)=>i);
       const monthsForYear = LAST.monthly.filter(r => r.year === year);
       getVal = (key, i) => monthsForYear[i][key];
-      thead.innerHTML = `<tr><th>Conta</th>${cols.map(i=>`<th>${MONTH_LABELS_PT[i]}/${String(year).slice(2)}</th>`).join('')}</tr>`;
     }
+    thead.innerHTML = `<tr><th>Conta</th>${cols.map(i=>`<th>${MONTH_LABELS_PT[i]}/${String(year).slice(2)}</th>`).join('')}</tr>`;
     title.textContent = `DRE Mensal · ${year} · ${DATA.companies[STATE.company].label}`;
+  }
+
+  function renderRow(node, cssClass, depthClass) {
+    const ratioChildren = ratioChildrenFor(node.ratioKey);
+    const hasKidsModel = node.details && node.details.length > 0;
+    const hasRatio = !!ratioChildren;
+    const hasChildren = hasKidsModel || hasRatio;
+    const expanded = isExpanded(node.id);
+    const btn = hasChildren ? `<button class="expand-btn" data-rowid="${node.id}">${expanded ? '−' : '+'}</button>` : `<span class="expand-spacer"></span>`;
+    const cells = cols.map(c => { const v = getVal(node.k, c); return `<td class="${v<0?'neg':''}">${fmtNum(v)}</td>`; }).join('');
+    let html = `<tr class="${cssClass}"><td>${btn}${node.label}</td>${cells}</tr>`;
+
+    if (expanded && hasKidsModel) {
+      node.details.forEach(d => { html += renderRow(d, depthClass === 'subdetail' ? 'subdetail' : 'detail', 'detail'); });
+    }
+    if (expanded && hasRatio) {
+      ratioChildren.forEach(item => {
+        const subCells = cols.map(c => { const parentV = getVal(node.k, c); const v = parentV * item.ratio; return `<td class="${v<0?'neg':''}">${fmtNum(v)}</td>`; }).join('');
+        html += `<tr class="subdetail"><td>${item.label}</td>${subCells}</tr>`;
+      });
+    }
+    return html;
   }
 
   let rowsHtml = '';
   DRE_GROUPS.forEach(group => {
-    const hasDetails = group.details.length > 0;
-    const expanded = !!STATE.dreExpanded[group.id];
-    const btn = hasDetails ? `<button class="expand-btn" data-group="${group.id}">${expanded ? '−' : '+'}</button>` : `<span class="expand-spacer"></span>`;
-    const subCells = cols.map(c => {
-      const v = getVal(group.subtotal.k, c);
-      return `<td class="${v<0?'neg':''}">${fmtNum(v)}</td>`;
-    }).join('');
-    rowsHtml += `<tr class="subtotal"><td>${btn}${group.subtotal.label}</td>${subCells}</tr>`;
-
-    group.details.forEach(d => {
-      const cells = cols.map(c => {
-        const v = getVal(d.k, c);
-        return `<td class="${v<0?'neg':''}">${fmtNum(v)}</td>`;
-      }).join('');
-      rowsHtml += `<tr class="detail ${expanded ? '' : 'hidden'}" data-group="${group.id}"><td>${d.label}</td>${cells}</tr>`;
-    });
-
+    rowsHtml += renderRow(group, 'subtotal', 'detail');
     if (group.margin) {
       const cells = cols.map(c => {
-        const num = getVal(group.margin.num, c);
-        const den = getVal(group.margin.den, c);
+        const num = getVal(group.margin.num, c); const den = getVal(group.margin.den, c);
         return `<td>${fmtPct(den ? num/den : 0)}</td>`;
       }).join('');
       rowsHtml += `<tr class="margin"><td>${group.margin.label}</td>${cells}</tr>`;
@@ -458,8 +513,8 @@ function renderDre() {
 
   tbody.querySelectorAll('.expand-btn').forEach(btn => {
     btn.addEventListener('click', () => {
-      const gid = btn.dataset.group;
-      STATE.dreExpanded[gid] = !STATE.dreExpanded[gid];
+      const id = btn.dataset.rowid;
+      STATE.dreExpanded[id] = !isExpanded(id);
       renderDre();
     });
   });
@@ -479,7 +534,7 @@ function renderDreCharts(annual) {
   });
 
   const y29 = annual[2029];
-  document.getElementById('composicaoDescYear').textContent = `2029E, % do total · ${DATA.companies[STATE.company].label}`;
+  document.getElementById('composicaoDescYear').textContent = `2029, % do total · ${DATA.companies[STATE.company].label}`;
   const despItems = [
     ['CMV', -y29.cmv], ['Marketing', -y29.marketing], ['Comercial', -y29.comercial],
     ['Folha', -y29.folha], ['Administrativas', -y29.administrativas], ['Outras', -(y29.bancarias+y29.outras)],
@@ -541,14 +596,24 @@ async function boot() {
   DATA = await res.json();
   STATE.assumptions = { ...DATA.scenarios['Realista'] };
   STATE.custom = { ...DATA.scenarios['Realista'] };
+
+  await window.chartJsReady;
+  if (typeof Chart !== 'undefined') {
+    Chart.defaults.font.family = "'Inter', sans-serif";
+    Chart.defaults.font.size = 11.5;
+    Chart.defaults.color = CHART_COLORS.ink;
+    Chart.defaults.plugins.legend.labels.boxWidth = 12;
+    Chart.defaults.plugins.legend.labels.usePointStyle = true;
+  }
+
   try {
     buildCompanySelect();
     buildControls();
     initNav();
-    initControlsCollapse();
+    initDrawer();
     initMobileNav();
     initScenarioSwitch();
-    initPeriodSelect();
+    initPeriodSelects();
     renderAll();
   } catch (err) {
     console.error('Falha ao renderizar o dashboard:', err);

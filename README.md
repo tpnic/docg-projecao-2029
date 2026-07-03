@@ -7,13 +7,12 @@ Dashboard interativo (FP&A) com a projeção financeira do Docg Group para o per
 ## Arquivos
 
 ```
-/index.html   → estrutura da aplicação (login, sidebar, cards, tabelas, gráficos)
+/index.html   → estrutura da aplicação (login, sidebar, cards, tabelas, gráficos, logo já embutido)
 /style.css    → sistema visual (paleta teal/branco da marca Docg, layout responsivo)
-/config.js    → usuários/senhas e o que a conta "diretor" pode ver (edite aqui)
-/auth.js      → tela de login e controle de acesso por papel
+/config.js    → lista de usuários e permissões (edite aqui, ou use a tela "Usuários" no app)
+/auth.js      → tela de login e controle de acesso por usuário
 /script.js    → motor de cálculo financeiro + renderização dos gráficos (Chart.js)
-/data.json    → base 2026 por empresa + premissas dos 3 cenários
-/assets/      → logos Docg (usados no login e na barra lateral)
+/data.json    → base 2026 por empresa, detalhamento por categoria e premissas dos 3 cenários
 /README.md    → este arquivo
 ```
 
@@ -29,33 +28,27 @@ O motor de cálculo em `script.js` replica a mesma lógica usada no arquivo Exce
 - **Premissas**: mesma organização por categoria, com o racional de cada driver.
 - Marca **"Documento Confidencial"** no rodapé e na barra lateral (sem menção a nenhum fundo específico, para reuso com diferentes investidores/stakeholders).
 
-## Login e controle de acesso
+## Login e usuários
 
-O dashboard abre com uma tela de login. Duas contas vêm configuradas por padrão (edite em `config.js`):
+O dashboard abre com uma tela de login. Um usuário admin vem configurado por padrão (edite em `config.js`):
 
 | Usuário   | Senha           | Papel                                                   |
 |-----------|-----------------|------------------------------------------------------------|
-| `admin`   | `docg2026admin` | Acesso completo + tela "Controle de Acesso"              |
-| `diretor` | `docg2026`      | Somente Visão Geral e DRE Projetada, sem editar premissas |
+| `admin`   | `docg2026admin` | Acesso completo + tela "Usuários"                        |
+| `diretor` | `docg2026`      | Exemplo de usuário personalizado (Visão Geral + DRE)     |
 
 **⚠️ Importante — leia antes de publicar:** este é um site 100% estático, sem servidor. Isso significa que **não existe segurança real** aqui — qualquer pessoa com conhecimento técnico consegue abrir o código-fonte da página (`config.js`) e ver as senhas. É um controle **organizacional**, pensado para quem vai receber o link não precisar navegar por telas/controles que não interessam, e não para proteger dados confidenciais de terceiros mal-intencionados.
 
-**Antes de publicar, troque as senhas padrão** em `config.js`:
+**Antes de publicar, troque a senha do admin** em `config.js`.
 
-```js
-users: {
-  admin:   { password: "SUA_SENHA_AQUI", role: "admin",   name: "Administrador" },
-  diretor: { password: "OUTRA_SENHA",     role: "diretor", name: "Diretor" },
-},
-```
-
-### Como escolher o que o diretor vê
+### Como criar e gerenciar usuários
 
 1. Faça login como `admin`.
-2. Vá em **Controle de Acesso** (menu lateral).
-3. Marque/desmarque as telas que o diretor deve ver, e as permissões (pode trocar de cenário? pode editar premissas? pode trocar o filtro de empresa?).
-4. A mudança já é testável na hora, no seu navegador (clique em Sair e entre como `diretor` para conferir).
-5. Para a mudança valer **para qualquer pessoa, em qualquer computador**, clique em **Copiar configuração**, cole o trecho copiado dentro de `config.js` (substituindo `directorVisibleViews` e `directorPermissions`), salve e publique novamente (commit + push) no GitHub Pages.
+2. Vá em **Usuários** (menu lateral, só aparece para o admin).
+3. Em "Criar novo usuário", preencha nome/login/senha, marque as **telas visíveis** (Visão Geral, DRE Projetada e/ou **Premissas**) e as **permissões** (trocar cenário, editar premissas, trocar empresa).
+4. O usuário já funciona na hora, neste navegador.
+5. Para valer **para qualquer pessoa, em qualquer computador**, clique em **Copiar configuração**, cole o trecho copiado dentro de `config.js` (substituindo o array `users` inteiro), salve e publique novamente (commit + push) no GitHub Pages.
+6. Pode remover qualquer usuário personalizado clicando na lixeira ao lado do nome (o usuário `admin` não pode ser removido).
 
 ## Como publicar gratuitamente no GitHub Pages
 

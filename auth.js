@@ -1,14 +1,14 @@
 /* ==========================================================================
-   AUTH.JS — Login e controle de acesso por papel (admin / diretor).
+   AUTH.JS — Login e controle de acesso por usuario.
 
-   Aviso: este é um site 100% estático (sem servidor). O controle de acesso
-   aqui é organizacional (evita que o diretor veja/edite o que não deve),
-   NÃO é uma proteção de segurança real — qualquer pessoa com acesso ao
-   código-fonte da página consegue ver as senhas em config.js.
+   Aviso: este e um site 100% estatico (sem servidor). O controle de acesso
+   aqui e organizacional (evita que cada pessoa veja/edite o que nao deve),
+   NAO e uma protecao de seguranca real — qualquer pessoa com acesso ao
+   codigo-fonte da pagina consegue ver as senhas em config.js.
    ========================================================================== */
 
 const SESSION_KEY = 'docg_session';
-const OVERRIDE_KEY = 'docg_access_override';
+const USERS_OVERRIDE_KEY = 'docg_users_override';
 const ALL_VIEWS = [
   { id: 'overview', label: 'Visão Geral' },
   { id: 'dre', label: 'DRE Projetada' },
@@ -17,31 +17,18 @@ const ALL_VIEWS = [
 
 let CURRENT_USER = null;
 
-function getEffectiveConfig() {
-  // Admin's live preview (this browser only) overrides config.js defaults until published.
+function getUsers() {
   try {
-    const raw = localStorage.getItem(OVERRIDE_KEY);
-    if (raw) {
-      const override = JSON.parse(raw);
-      return {
-        directorVisibleViews: override.views || window.APP_CONFIG.directorVisibleViews,
-        directorPermissions: override.permissions || window.APP_CONFIG.directorPermissions,
-      };
-    }
+    const raw = localStorage.getItem(USERS_OVERRIDE_KEY);
+    if (raw) return JSON.parse(raw);
   } catch (e) { /* ignore malformed override */ }
-  return {
-    directorVisibleViews: window.APP_CONFIG.directorVisibleViews,
-    directorPermissions: window.APP_CONFIG.directorPermissions,
-  };
+  return window.APP_CONFIG.users;
 }
 
 function saveSession(user, remember) {
-  const payload = JSON.stringify(user);
-  if (remember) {
-    localStorage.setItem(SESSION_KEY, payload);
-  } else {
-    sessionStorage.setItem(SESSION_KEY, payload);
-  }
+  const payload = JSON.stringify({ username: user.username });
+  if (remember) localStorage.setItem(SESSION_KEY, payload);
+  else sessionStorage.setItem(SESSION_KEY, payload);
 }
 
 function loadSession() {
@@ -68,108 +55,175 @@ function hideLogin() {
   document.getElementById('appRoot').style.display = 'grid';
 }
 
+function findUser(username) {
+  const users = getUsers();
+  return users.find(u => u.username.toLowerCase() === username.trim().toLowerCase()) || null;
+}
+
 function attemptLogin(username, password) {
-  const users = window.APP_CONFIG.users;
-  const key = Object.keys(users).find(u => u.toLowerCase() === username.trim().toLowerCase());
-  if (!key || users[key].password !== password) {
-    return null;
-  }
-  return { username: key, role: users[key].role, name: users[key].name };
+  const user = findUser(username);
+  if (!user || user.password !== password) return null;
+  return user;
+}
+
+function userVisibleViews(user) {
+  if (user.role === 'admin') return ALL_VIEWS.map(v => v.id);
+  return user.views || [];
+}
+function userPermissions(user) {
+  if (user.role === 'admin') return { canChangeScenario: true, canEditAssumptions: true, canChangeCompany: true };
+  return user.permissions || { canChangeScenario: false, canEditAssumptions: false, canChangeCompany: false };
 }
 
 function applyRoleRestrictions(user) {
   const isAdmin = user.role === 'admin';
-  const cfg = getEffectiveConfig();
+  const visibleSet = userVisibleViews(user);
+  const perms = userPermissions(user);
 
-  // user chip
   document.getElementById('userAvatar').textContent = user.name.charAt(0).toUpperCase();
   document.getElementById('userName').textContent = user.name;
-  document.getElementById('userRole').textContent = isAdmin ? 'Administrador' : 'Diretor · somente leitura';
+  document.getElementById('userRole').textContent = isAdmin ? 'Administrador' : (user.name + ' · acesso restrito');
 
-  // admin-only nav item
   document.getElementById('navAccessItem').style.display = isAdmin ? '' : 'none';
 
-  // filter sidebar nav for diretor
-  const visibleSet = isAdmin ? ALL_VIEWS.map(v => v.id) : cfg.directorVisibleViews;
   document.querySelectorAll('.nav-item[data-view]').forEach(btn => {
     const view = btn.dataset.view;
-    if (view === 'access') return; // handled above
+    if (view === 'access') return;
     const li = btn.closest('li');
     li.style.display = visibleSet.includes(view) ? '' : 'none';
   });
 
-  // land on the first visible view
-  const firstVisibleBtn = document.querySelector('.nav-item[data-view]:not([style*="display: none"])') ||
-    Array.from(document.querySelectorAll('.nav-item[data-view]')).find(b => visibleSet.includes(b.dataset.view));
+  const firstVisibleBtn = Array.from(document.querySelectorAll('.nav-item[data-view]'))
+    .find(b => b.dataset.view === 'access' ? false : visibleSet.includes(b.dataset.view));
   if (firstVisibleBtn) firstVisibleBtn.click();
 
-  // controls panel + scenario switch + company filter permissions (diretor only)
-  const controlsWrap = document.querySelector('.controls-wrap');
+  const drawerToggle = document.getElementById('drawerToggleBtn');
   const scenarioSwitch = document.getElementById('scenarioSwitch');
   const companySelect = document.getElementById('companySelect');
-  if (isAdmin) {
-    controlsWrap.style.display = '';
-    scenarioSwitch.style.display = '';
-    companySelect.disabled = false;
-  } else {
-    controlsWrap.style.display = cfg.directorPermissions.canEditAssumptions ? '' : 'none';
-    scenarioSwitch.style.display = cfg.directorPermissions.canChangeScenario ? '' : 'none';
-    companySelect.disabled = !cfg.directorPermissions.canChangeCompany;
-  }
 
-  if (isAdmin) initAccessControlPanel();
+  drawerToggle.style.display = perms.canEditAssumptions ? '' : 'none';
+  scenarioSwitch.style.display = perms.canChangeScenario ? '' : 'none';
+  companySelect.disabled = !perms.canChangeCompany;
+
+  if (isAdmin) initUserManagementPanel();
 }
 
-function initAccessControlPanel() {
-  const cfg = getEffectiveConfig();
-  const grid = document.getElementById('accessViewsGrid');
-  grid.innerHTML = ALL_VIEWS.map(v => `
+/* ------------------------------ User management (admin) ------------------------------ */
+function renderUsersList() {
+  const users = getUsers().filter(u => u.role !== 'admin');
+  const wrap = document.getElementById('usersListWrap');
+  if (users.length === 0) {
+    wrap.innerHTML = `<p class="footnote">Nenhum usuário personalizado criado ainda.</p>`;
+    return;
+  }
+  wrap.innerHTML = users.map((u, i) => {
+    const views = (u.views || []).map(v => ALL_VIEWS.find(av => av.id === v)?.label || v).join(', ') || 'nenhuma';
+    const perms = u.permissions || {};
+    const permsList = [
+      perms.canChangeScenario ? 'troca cenário' : null,
+      perms.canEditAssumptions ? 'edita premissas' : null,
+      perms.canChangeCompany ? 'troca empresa' : null,
+    ].filter(Boolean).join(', ') || 'somente visualização';
+    return `
+      <div class="user-row">
+        <div class="user-row-avatar">${u.name.charAt(0).toUpperCase()}</div>
+        <div class="user-row-info">
+          <div class="user-row-name">${u.name} <span class="user-row-username">@${u.username}</span></div>
+          <div class="user-row-meta">Telas: ${views} · Permissões: ${permsList}</div>
+        </div>
+        <button class="user-row-delete" data-idx="${i}" title="Remover usuário">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0-1 14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L4 6h16Z"/></svg>
+        </button>
+      </div>`;
+  }).join('');
+
+  wrap.querySelectorAll('.user-row-delete').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const idx = parseInt(btn.dataset.idx, 10);
+      const allUsers = getUsers();
+      const customUsers = allUsers.filter(u => u.role !== 'admin');
+      const toRemove = customUsers[idx];
+      const updated = allUsers.filter(u => u !== toRemove);
+      localStorage.setItem(USERS_OVERRIDE_KEY, JSON.stringify(updated));
+      renderUsersList();
+      updateConfigPreview();
+    });
+  });
+}
+
+function initUserManagementPanel() {
+  const viewsGrid = document.getElementById('newUserViewsGrid');
+  viewsGrid.innerHTML = ALL_VIEWS.map(v => `
     <label class="access-toggle">
-      <input type="checkbox" data-view-id="${v.id}" ${cfg.directorVisibleViews.includes(v.id) ? 'checked' : ''}>
+      <input type="checkbox" data-view-id="${v.id}">
       <span>${v.label}</span>
     </label>`).join('');
 
-  document.getElementById('permScenario').checked = !!cfg.directorPermissions.canChangeScenario;
-  document.getElementById('permAssumptions').checked = !!cfg.directorPermissions.canEditAssumptions;
-  document.getElementById('permCompany').checked = !!cfg.directorPermissions.canChangeCompany;
+  renderUsersList();
+  updateConfigPreview();
 
-  function currentSelection() {
-    const views = Array.from(grid.querySelectorAll('input[type="checkbox"]:checked')).map(i => i.dataset.viewId);
+  document.getElementById('addUserBtn').addEventListener('click', () => {
+    const username = document.getElementById('newUserUsername').value.trim();
+    const password = document.getElementById('newUserPassword').value;
+    const name = document.getElementById('newUserName').value.trim() || username;
+    const errEl = document.getElementById('newUserError');
+    errEl.textContent = '';
+
+    if (!username || !password) { errEl.textContent = 'Preencha usuário e senha.'; return; }
+    if (findUser(username)) { errEl.textContent = 'Já existe um usuário com esse nome.'; return; }
+
+    const views = Array.from(viewsGrid.querySelectorAll('input:checked')).map(i => i.dataset.viewId);
     const permissions = {
-      canChangeScenario: document.getElementById('permScenario').checked,
-      canEditAssumptions: document.getElementById('permAssumptions').checked,
-      canChangeCompany: document.getElementById('permCompany').checked,
+      canChangeScenario: document.getElementById('newUserPermScenario').checked,
+      canEditAssumptions: document.getElementById('newUserPermAssumptions').checked,
+      canChangeCompany: document.getElementById('newUserPermCompany').checked,
     };
-    return { views, permissions };
-  }
+    const newUser = { username, password, role: 'custom', name, views, permissions };
+    const updated = [...getUsers(), newUser];
+    localStorage.setItem(USERS_OVERRIDE_KEY, JSON.stringify(updated));
 
-  function updatePreview() {
-    const sel = currentSelection();
-    localStorage.setItem(OVERRIDE_KEY, JSON.stringify(sel));
-    const snippet =
-`directorVisibleViews: [${sel.views.map(v => `"${v}"`).join(', ')}],
-directorPermissions: {
-  canChangeScenario: ${sel.permissions.canChangeScenario},
-  canEditAssumptions: ${sel.permissions.canEditAssumptions},
-  canChangeCompany: ${sel.permissions.canChangeCompany},
-},`;
-    document.getElementById('configPreview').textContent = snippet;
-  }
+    document.getElementById('newUserUsername').value = '';
+    document.getElementById('newUserPassword').value = '';
+    document.getElementById('newUserName').value = '';
+    viewsGrid.querySelectorAll('input').forEach(i => i.checked = false);
+    ['newUserPermScenario', 'newUserPermAssumptions', 'newUserPermCompany'].forEach(id => document.getElementById(id).checked = false);
 
-  grid.querySelectorAll('input').forEach(cb => cb.addEventListener('change', updatePreview));
-  document.getElementById('permScenario').addEventListener('change', updatePreview);
-  document.getElementById('permAssumptions').addEventListener('change', updatePreview);
-  document.getElementById('permCompany').addEventListener('change', updatePreview);
-  updatePreview();
+    renderUsersList();
+    updateConfigPreview();
+  });
 
-  document.getElementById('copyConfigBtn').onclick = () => {
+  document.getElementById('copyConfigBtn').addEventListener('click', () => {
     const text = document.getElementById('configPreview').textContent;
     navigator.clipboard.writeText(text).then(() => {
       const fb = document.getElementById('copyFeedback');
-      fb.textContent = 'Copiado! Cole em config.js e publique novamente.';
-      setTimeout(() => { fb.textContent = ''; }, 3500);
+      fb.textContent = 'Copiado! Cole em config.js (substituindo o array "users") e publique novamente.';
+      setTimeout(() => { fb.textContent = ''; }, 4500);
     });
-  };
+  });
+}
+
+function updateConfigPreview() {
+  const users = getUsers();
+  const lines = users.map(u => {
+    if (u.role === 'admin') {
+      return `    { username: "${u.username}", password: "${u.password}", role: "admin", name: "${u.name}" },`;
+    }
+    const views = (u.views || []).map(v => `"${v}"`).join(', ');
+    const p = u.permissions || {};
+    return `    {
+      username: "${u.username}",
+      password: "${u.password}",
+      role: "custom",
+      name: "${u.name}",
+      views: [${views}],
+      permissions: {
+        canChangeScenario: ${!!p.canChangeScenario},
+        canEditAssumptions: ${!!p.canEditAssumptions},
+        canChangeCompany: ${!!p.canChangeCompany},
+      },
+    },`;
+  });
+  document.getElementById('configPreview').textContent = `window.APP_CONFIG = {\n  users: [\n${lines.join('\n')}\n  ],\n};`;
 }
 
 function login(user, remember) {
@@ -188,10 +242,10 @@ function login(user, remember) {
 function initAuth() {
   const existing = loadSession();
   if (existing) {
-    login(existing, true);
-  } else {
-    showLogin();
+    const user = findUser(existing.username);
+    if (user) { login(user, true); return; }
   }
+  showLogin();
 
   document.getElementById('loginForm').addEventListener('submit', (e) => {
     e.preventDefault();
@@ -199,10 +253,7 @@ function initAuth() {
     const password = document.getElementById('loginPass').value;
     const remember = document.getElementById('loginRemember').checked;
     const user = attemptLogin(username, password);
-    if (!user) {
-      showLogin('Usuário ou senha incorretos.');
-      return;
-    }
+    if (!user) { showLogin('Usuário ou senha incorretos.'); return; }
     login(user, remember);
   });
 

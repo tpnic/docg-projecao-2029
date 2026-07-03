@@ -1,38 +1,34 @@
 /* ==========================================================================
-   CONFIG.JS — EDITE ESTE ARQUIVO PARA TROCAR SENHAS E CONTROLAR O QUE O
-   DIRETOR PODE VER. Depois de editar, salve e publique novamente no
-   GitHub Pages (commit + push) para as mudanças valerem para todo mundo.
+   CONFIG.JS — EDITE ESTE ARQUIVO PARA GERENCIAR USUARIOS MANUALMENTE.
+   O jeito mais facil, porem, e usar a tela "Usuarios" dentro do dashboard
+   (logado como admin) e depois clicar em "Copiar configuracao" — ela gera
+   o conteudo pronto para colar aqui.
 
-   IMPORTANTE: como este site é 100% estático (sem servidor), estas senhas
-   ficam visíveis a qualquer pessoa que abrir o código-fonte da página.
-   Isso NÃO é uma proteção contra invasão — é apenas um controle de
-   organização, para que o diretor veja uma versão mais enxuta do
-   dashboard, sem mexer nas premissas por engano.
+   IMPORTANTE: como este site e 100% estatico (sem servidor), estas senhas
+   ficam visiveis a qualquer pessoa que abrir o codigo-fonte da pagina.
+   Isso NAO e uma protecao contra invasao — e apenas um controle de
+   organizacao, para cada pessoa ver uma versao do dashboard adequada ao
+   seu perfil, sem mexer em telas/premissas por engano.
    ========================================================================== */
 
 window.APP_CONFIG = {
-  // ---- Usuários e senhas (troque à vontade) ----
-  users: {
-    admin: {
-      password: "docg2026admin",
-      role: "admin",
-      name: "Administrador",
-    },
-    diretor: {
+  users: [
+    // O usuario "admin" sempre tem acesso total + a tela "Usuarios".
+    { username: "admin", password: "docg2026admin", role: "admin", name: "Administrador" },
+
+    // Usuarios personalizados: adicione quantos quiser, cada um com seu proprio
+    // conjunto de telas visiveis e permissoes. "views" aceita: "overview", "dre", "premissas".
+    {
+      username: "diretor",
       password: "docg2026",
-      role: "diretor",
+      role: "custom",
       name: "Diretor",
+      views: ["overview", "dre"],
+      permissions: {
+        canChangeScenario: true,
+        canEditAssumptions: false,
+        canChangeCompany: true,
+      },
     },
-  },
-
-  // ---- O que o papel "diretor" pode ver ----
-  // Opções possíveis: "overview", "dre", "premissas"
-  directorVisibleViews: ["overview", "dre"],
-
-  // ---- O que o diretor pode fazer dentro das telas liberadas ----
-  directorPermissions: {
-    canChangeScenario: true,    // pode clicar em Conservador/Realista/Agressivo
-    canEditAssumptions: false,  // pode arrastar os sliders de premissas (Personalizado)
-    canChangeCompany: true,     // pode trocar o filtro de empresa (Consolidado/Coralina/etc)
-  },
+  ],
 };

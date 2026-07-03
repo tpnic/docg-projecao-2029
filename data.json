@@ -2002,5 +2002,330 @@
       "label": "Financeiro & Macro",
       "icon": "percent"
     }
+  },
+  "detailBreakdown": {
+    "Consolidado": {
+      "receitaBruta": [
+        {
+          "label": "Coralina",
+          "ratio": 0.928988
+        },
+        {
+          "label": "Franquias",
+          "ratio": 0.048947
+        },
+        {
+          "label": "Distribuidora",
+          "ratio": 0.020624
+        },
+        {
+          "label": "Tech",
+          "ratio": 0.00144
+        }
+      ],
+      "deducoes": [
+        {
+          "label": "ICMS",
+          "ratio": 0.468514
+        },
+        {
+          "label": "COFINS",
+          "ratio": 0.297552
+        },
+        {
+          "label": "PIS",
+          "ratio": 0.06454
+        },
+        {
+          "label": "ISS",
+          "ratio": 0.000355
+        },
+        {
+          "label": "IPI",
+          "ratio": 0.16904
+        }
+      ],
+      "administrativas": [
+        {
+          "label": "Comunicações -  Telefonia e Internet",
+          "ratio": 0.015251
+        },
+        {
+          "label": "Serviços de Informática",
+          "ratio": 0.100493
+        },
+        {
+          "label": "Prestação de Serviços - Financeiro",
+          "ratio": 0.332448
+        },
+        {
+          "label": "Aluguel de Imóveis",
+          "ratio": 0.116876
+        },
+        {
+          "label": "Carro Docg - Atlas",
+          "ratio": 0.05236
+        },
+        {
+          "label": "Fretes",
+          "ratio": 0.058355
+        },
+        {
+          "label": "Água e Esgoto",
+          "ratio": 0.001519
+        },
+        {
+          "label": "Energia Elétrica",
+          "ratio": 0.000259
+        },
+        {
+          "label": "Manutenção de Imobilizado",
+          "ratio": 0.05752
+        },
+        {
+          "label": "Correios e Malotes",
+          "ratio": 0.006967
+        },
+        {
+          "label": "Condomínio",
+          "ratio": 0.016495
+        },
+        {
+          "label": "Serviços de Contabilidade",
+          "ratio": 0.000401
+        },
+        {
+          "label": "Material Promocional",
+          "ratio": 0.009097
+        },
+        {
+          "label": "Aluguéis de Imóveis",
+          "ratio": 0.00732
+        },
+        {
+          "label": "Assistência Médica",
+          "ratio": 0.005792
+        },
+        {
+          "label": "Serviços Terceiros Pessoa Jurídica",
+          "ratio": 0.00561
+        },
+        {
+          "label": "Demais Despesas",
+          "ratio": 0.000449
+        },
+        {
+          "label": "Locação",
+          "ratio": 0.011615
+        },
+        {
+          "label": "Despesas Administrativas — Tech",
+          "ratio": 0.007334
+        },
+        {
+          "label": "Despesas Administrativas — S.A",
+          "ratio": 0.19384
+        }
+      ]
+    },
+    "Coralina": {
+      "receitaBruta": [
+        {
+          "label": "Receitas com vendas - Terceirização",
+          "ratio": 0.6559
+        },
+        {
+          "label": "Receitas com vendas - Exportação",
+          "ratio": 0.194235
+        },
+        {
+          "label": "Receitas com vendas - Venda Direta",
+          "ratio": 0.149864
+        }
+      ],
+      "deducoes": [
+        {
+          "label": "COFINS",
+          "ratio": 0.298559
+        },
+        {
+          "label": "PIS",
+          "ratio": 0.06476
+        },
+        {
+          "label": "IPI",
+          "ratio": 0.173525
+        },
+        {
+          "label": "ICMS",
+          "ratio": 0.463157
+        }
+      ],
+      "cmv": [
+        {
+          "label": "Custo com Pessoal",
+          "ratio": 0.7658
+        },
+        {
+          "label": "Custos de Fábrica",
+          "ratio": 0.2342
+        }
+      ],
+      "administrativas": [
+        {
+          "label": "Serviços de Informática",
+          "ratio": 0.580704
+        },
+        {
+          "label": "Comunicações -  Telefonia e Internet",
+          "ratio": -0.009884
+        },
+        {
+          "label": "Assistência Médica",
+          "ratio": 0.105926
+        },
+        {
+          "label": "Serviços Terceiros Pessoa Jurídica",
+          "ratio": 0.102605
+        },
+        {
+          "label": "Demais Despesas",
+          "ratio": 0.00822
+        },
+        {
+          "label": "Locação",
+          "ratio": 0.21243
+        }
+      ]
+    },
+    "Franquias": {
+      "receitaBruta": [
+        {
+          "label": "Receitas com Royalties",
+          "ratio": 0.746906
+        },
+        {
+          "label": "Outras Receitas",
+          "ratio": 0.253094
+        }
+      ],
+      "deducoes": [
+        {
+          "label": "ICMS",
+          "ratio": 0.413327
+        },
+        {
+          "label": "COFINS",
+          "ratio": 0.482197
+        },
+        {
+          "label": "PIS",
+          "ratio": 0.104476
+        }
+      ],
+      "administrativas": [
+        {
+          "label": "Comunicações -  Telefonia e Internet",
+          "ratio": 0.021221
+        },
+        {
+          "label": "Serviços de Informática",
+          "ratio": 0.092377
+        },
+        {
+          "label": "Prestação de Serviços - Financeiro",
+          "ratio": 0.446748
+        },
+        {
+          "label": "Aluguel de Imóveis",
+          "ratio": 0.15706
+        },
+        {
+          "label": "Carro Docg - Atlas",
+          "ratio": 0.070363
+        },
+        {
+          "label": "Fretes",
+          "ratio": 0.078418
+        },
+        {
+          "label": "Água e Esgoto",
+          "ratio": 0.002041
+        },
+        {
+          "label": "Energia Elétrica",
+          "ratio": 0.000348
+        },
+        {
+          "label": "Manutenção de Imobilizado",
+          "ratio": 0.077296
+        },
+        {
+          "label": "Correios e Malotes",
+          "ratio": 0.009363
+        },
+        {
+          "label": "Condomínio",
+          "ratio": 0.022167
+        },
+        {
+          "label": "Serviços de Contabilidade",
+          "ratio": 0.000539
+        },
+        {
+          "label": "Material Promocional",
+          "ratio": 0.012224
+        },
+        {
+          "label": "Aluguéis de Imóveis",
+          "ratio": 0.009836
+        }
+      ]
+    },
+    "Distribuidora": {
+      "receitaBruta": [
+        {
+          "label": "Receitas com vendas - Terceirização",
+          "ratio": 1.0
+        }
+      ],
+      "deducoes": [
+        {
+          "label": "COFINS",
+          "ratio": 0.01519
+        },
+        {
+          "label": "PIS",
+          "ratio": 0.003291
+        },
+        {
+          "label": "ICMS",
+          "ratio": 0.981518
+        }
+      ]
+    },
+    "Tech": {
+      "receitaBruta": [
+        {
+          "label": "Receitas com prestação de serviços",
+          "ratio": 1.0
+        }
+      ],
+      "deducoes": [
+        {
+          "label": "COFINS",
+          "ratio": 0.533344
+        },
+        {
+          "label": "PIS",
+          "ratio": 0.115782
+        },
+        {
+          "label": "ISS",
+          "ratio": 0.350874
+        }
+      ]
+    },
+    "S.A": {}
   }
 }
